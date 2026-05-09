@@ -12,19 +12,25 @@ from app.routers.chat_ws import router as chat_ws_router
 from app.routers.friend_router import router as friend_router
 from app.routers.run_router import router as run_router
 from app.routers.user_router import router as user_router
+from app.logger import app_logger, db_logger
 
 
 MEDIA_DIR = Path(__file__).resolve().parent / "media"
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 
+app_logger.info("Запуск приложения GoRun | Starting GoRun application")
+
 app = FastAPI()
 
+app_logger.info("Создание таблиц БД | Creating database tables")
 Base.metadata.create_all(bind=engine)
 
 
 def run_runtime_migrations() -> None:
+    db_logger.info("Запуск runtime миграций | Running runtime migrations")
     inspector = inspect(engine)
     if not inspector.has_table("messages"):
+        db_logger.warning("Таблица messages не найдена, миграции пропущены | Messages table not found, skipping migrations")
         return
 
     existing_columns = {column["name"] for column in inspector.get_columns("messages")}
@@ -60,15 +66,21 @@ def run_runtime_migrations() -> None:
             migrations.append("ALTER TABLE joint_run_challenges ADD COLUMN opponent_max_speed_kmh DOUBLE PRECISION")
 
     if not migrations:
+        db_logger.info("Миграции не требуются | No migrations needed")
         return
 
+    db_logger.info(f"Применение {len(migrations)} миграций | Applying {len(migrations)} migrations")
     with engine.begin() as connection:
         for migration in migrations:
+            db_logger.debug(f"Выполнение миграции | Executing migration: {migration[:50]}...")
             connection.execute(text(migration))
+
+    db_logger.info("Runtime миграции успешно применены | Runtime migrations completed successfully")
 
 
 run_runtime_migrations()
 
+app_logger.info("Подключение роутеров | Mounting routers")
 app.include_router(auth_router)
 app.include_router(friend_router)
 app.include_router(user_router)
@@ -77,7 +89,10 @@ app.include_router(chat_router)
 app.include_router(chat_ws_router)
 app.mount("/media", StaticFiles(directory=str(MEDIA_DIR)), name="media")
 
+app_logger.info("Приложение GoRun успешно запущено | GoRun application started successfully")
+
 
 @app.get("/")
 async def root():
+    app_logger.debug("Запрос к корневому эндпоинту | Root endpoint accessed")
     return {"message": "Hello World"}

@@ -24,6 +24,7 @@ from app.schemas.chat_schema import (
     MessageResponse,
     ReadReceiptResponse,
 )
+from app.logger import chat_logger
 
 
 CHAT_IMAGES_DIR = Path(__file__).resolve().parent.parent / "media" / "chat_images"
@@ -205,15 +206,20 @@ def start_chat(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
+    chat_logger.info(f"Начало чата | Starting chat: from_user_id={current_user.id}, to_user_id={user_id}")
+
     if user_id == current_user.id:
+        chat_logger.warning(f"Попытка создать чат с самим собой | Attempt to chat with self: user_id={current_user.id}")
         raise HTTPException(status_code=400, detail="Cannot chat with yourself")
 
     target_user = user_crud.get_user_by_id(db, user_id)
 
     if not target_user:
+        chat_logger.warning(f"Целевой пользователь не найден | Target user not found: user_id={user_id}")
         raise HTTPException(status_code=404, detail="User not found")
 
     if not friend_crud.friendship_exists(db, current_user.id, user_id):
+        chat_logger.warning(f"Попытка создать чат с не-другом | Attempt to chat with non-friend: from={current_user.id}, to={user_id}")
         raise HTTPException(
             status_code=403,
             detail="You can start chats only with friends"
@@ -225,6 +231,7 @@ def start_chat(
         user_id
     )
 
+    chat_logger.info(f"Чат создан/получен | Chat created/retrieved: conversation_id={conversation.id}, users=[{current_user.id}, {user_id}]")
     return conversation
 
 
@@ -235,10 +242,13 @@ async def send_message(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
+    chat_logger.info(f"Отправка сообщения | Sending message: conversation_id={data.conversation_id}, user_id={current_user.id}, type={data.message_type}")
+
     ensure_conversation_access(db, current_user.id, data.conversation_id)
 
     try:
         if data.message_type == "shared_run":
+            chat_logger.debug(f"Обработка расшаренного забега | Processing shared run: share_code={data.shared_run_code}")
             shared_run = build_shared_run_payload(db, current_user, (data.shared_run_code or "").strip())
             message = chat_crud.create_message(
                 db,
@@ -249,6 +259,7 @@ async def send_message(
                 message_type="shared_run",
                 shared_run=shared_run,
             )
+            chat_logger.info(f"Сообщение с забегом создано | Shared run message created: message_id={message.id}, run_name={shared_run['name']}")
         else:
             message = chat_crud.create_message(
                 db,
@@ -258,11 +269,14 @@ async def send_message(
                 client_message_id=data.client_message_id,
                 message_type=data.message_type,
             )
+            chat_logger.info(f"Сообщение создано | Message created: message_id={message.id}, type={data.message_type}")
     except ValueError as exc:
+        chat_logger.error(f"Ошибка валидации сообщения | Message validation error: {str(exc)}")
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     serialized_message = serialize_message(message, request)
     await manager.broadcast(data.conversation_id, {"type": "message", **serialized_message})
+    chat_logger.debug(f"Сообщение отправлено через WebSocket | Message broadcasted via WebSocket: message_id={message.id}")
     return serialized_message
 
 
@@ -274,9 +288,13 @@ async def create_joint_run(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
+    chat_logger.info(f"Создание совместного забега | Creating joint run: conversation_id={conversation_id}, creator_id={current_user.id}, mode={data.mode}")
+
     ensure_conversation_access(db, current_user.id, conversation_id)
     opponent_id = get_conversation_opponent_id(db, conversation_id, current_user.id)
     mode, target_seconds, target_distance_meters = validate_joint_run_payload(data)
+
+    chat_logger.debug(f"Параметры забега | Run parameters: mode={mode}, target_seconds={target_seconds}, target_distance={target_distance_meters}")
 
     challenge = JointRunChallenge(
         conversation_id=conversation_id,
@@ -301,6 +319,8 @@ async def create_joint_run(
         joint_run_challenge_id=challenge.id,
     )
 
+    chat_logger.info(f"Совместный забег создан | Joint run created: challenge_id={challenge.id}, creator={current_user.id}, opponent={opponent_id}")
+
     serialized_message = serialize_message(message, request)
     await manager.broadcast(conversation_id, {"type": "message", **serialized_message})
     return serialized_message
@@ -324,16 +344,22 @@ async def accept_joint_run(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
+    chat_logger.info(f"Принятие совместного забега | Accepting joint run: challenge_id={challenge_id}, user_id={current_user.id}")
+
     challenge = get_joint_run_for_user(db, challenge_id, current_user.id)
     if current_user.id != challenge.opponent_id:
+        chat_logger.warning(f"Попытка принять забег не оппонентом | Non-opponent trying to accept: challenge_id={challenge_id}, user_id={current_user.id}")
         raise HTTPException(status_code=403, detail="Only the opponent can accept this request")
     if challenge.status not in {"pending", "postponed"}:
+        chat_logger.warning(f"Попытка принять забег в неверном статусе | Invalid status for accept: challenge_id={challenge_id}, status={challenge.status}")
         raise HTTPException(status_code=400, detail="Joint run cannot be accepted now")
 
     challenge.status = "accepted"
     reset_joint_run_readiness(challenge)
     db.commit()
     db.refresh(challenge)
+
+    chat_logger.info(f"Совместный забег принят | Joint run accepted: challenge_id={challenge_id}, opponent_id={current_user.id}")
     return await broadcast_joint_run_message(db, request, challenge.id)
 
 
@@ -400,18 +426,24 @@ async def ready_joint_run(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
+    chat_logger.info(f"Готовность к совместному забегу | Ready for joint run: challenge_id={challenge_id}, user_id={current_user.id}")
+
     challenge = get_joint_run_for_user(db, challenge_id, current_user.id)
     if challenge.status not in {"accepted", "ready"}:
+        chat_logger.warning(f"Попытка готовности в неверном статусе | Invalid status for ready: challenge_id={challenge_id}, status={challenge.status}")
         raise HTTPException(status_code=400, detail="Joint run is not accepted")
 
     if current_user.id == challenge.creator_id:
         challenge.creator_ready = True
+        chat_logger.debug(f"Создатель готов | Creator ready: challenge_id={challenge_id}")
     else:
         challenge.opponent_ready = True
+        chat_logger.debug(f"Оппонент готов | Opponent ready: challenge_id={challenge_id}")
 
     if challenge.creator_ready and challenge.opponent_ready:
         challenge.status = "ready"
         challenge.started_at = func.now()
+        chat_logger.info(f"Оба участника готовы, забег начинается | Both ready, run starting: challenge_id={challenge_id}")
 
     db.commit()
     db.refresh(challenge)
@@ -426,10 +458,14 @@ async def update_joint_run_live(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
+    chat_logger.debug(f"Обновление прогресса забега | Updating run progress: challenge_id={challenge_id}, user_id={current_user.id}, distance={data.distance_meters}m")
+
     challenge = get_joint_run_for_user(db, challenge_id, current_user.id)
     if challenge.status == "ready":
         challenge.status = "running"
+        chat_logger.info(f"Забег начат | Run started: challenge_id={challenge_id}")
     if challenge.status not in {"running", "finished"}:
+        chat_logger.warning(f"Попытка обновления в неверном статусе | Invalid status for update: challenge_id={challenge_id}, status={challenge.status}")
         raise HTTPException(status_code=400, detail="Joint run is not running")
 
     if current_user.id == challenge.creator_id:
@@ -460,6 +496,9 @@ async def update_joint_run_live(
         )
 
     mark_joint_run_finished_if_needed(challenge)
+    if challenge.status == "finished":
+        chat_logger.info(f"Забег завершен | Run finished: challenge_id={challenge_id}, winner_id={challenge.winner_id}")
+
     db.commit()
     db.refresh(challenge)
     return await broadcast_joint_run_message(db, request, challenge.id)
@@ -511,9 +550,13 @@ async def send_image(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
+    chat_logger.info(f"Отправка изображения | Sending image: conversation_id={conversation_id}, user_id={current_user.id}, filename={image.filename}")
+
     ensure_conversation_access(db, current_user.id, conversation_id)
 
     saved_image_path = await save_chat_image_file(image)
+    chat_logger.debug(f"Изображение сохранено | Image saved: path={saved_image_path}")
+
     try:
         message = chat_crud.create_message(
             db,
@@ -524,8 +567,10 @@ async def send_image(
             message_type="image",
             image_url=saved_image_path,
         )
-    except Exception:
+        chat_logger.info(f"Сообщение с изображением создано | Image message created: message_id={message.id}")
+    except Exception as e:
         delete_chat_image_file(saved_image_path)
+        chat_logger.error(f"Ошибка при создании сообщения с изображением | Error creating image message: {str(e)}")
         raise
 
     serialized_message = serialize_message(message, request)
@@ -542,12 +587,16 @@ async def get_messages(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
+    chat_logger.info(f"Получение сообщений | Getting messages: conversation_id={conversation_id}, user_id={current_user.id}, limit={limit}, offset={offset}")
+
     ensure_conversation_access(db, current_user.id, conversation_id)
 
     if limit < 1 or limit > 100:
+        chat_logger.warning(f"Неверный лимит | Invalid limit: limit={limit}, user_id={current_user.id}")
         raise HTTPException(status_code=400, detail="Limit must be between 1 and 100")
 
     if offset < 0:
+        chat_logger.warning(f"Неверный offset | Invalid offset: offset={offset}, user_id={current_user.id}")
         raise HTTPException(status_code=400, detail="Offset must be positive or zero")
 
     updated_message_ids = chat_crud.mark_conversation_messages_as_read(db, conversation_id, current_user.id)
@@ -558,6 +607,8 @@ async def get_messages(
         limit=limit,
         offset=offset
     )
+
+    chat_logger.info(f"Сообщения получены | Messages retrieved: conversation_id={conversation_id}, count={len(messages)}, marked_read={len(updated_message_ids)}")
 
     if updated_message_ids:
         await manager.broadcast(

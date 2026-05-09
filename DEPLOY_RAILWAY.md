@@ -25,7 +25,7 @@ git add .
 git commit -m "Initial commit"
 
 # Создай репозиторий на GitHub и подключи
-git remote add origin https://github.com/YOUR_USERNAME/gorun-backend.git
+git remote add origin https://github.com/niQzaz/gorun-backend.git
 git branch -M main
 git push -u origin main
 ```
@@ -39,7 +39,7 @@ git push -u origin main
 3. Выбери **Login with GitHub**
 4. Разреши доступ
 
----
+---   
 
 ### Шаг 3: Создание проекта
 
@@ -227,3 +227,118 @@ Railway не сохраняет загруженные файлы между д�
 ---
 
 **Готово!** Сервер работает 24/7 без засыпания! 🚀
+
+
+  File "/app/.venv/lib/python3.11/site-packages/uvicorn/main.py", line 579, in run
+    server.run()
+  File "/app/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 65, in run
+  File "/mise/installs/python/3.11.15/lib/python3.11/asyncio/runners.py", line 190, in run
+  File "/app/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 76, in _serve
+    config.load()
+  File "/app/.venv/lib/python3.11/site-packages/uvicorn/config.py", line 434, in load
+  File "/app/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 22, in import_from_string
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/.venv/lib/python3.11/site-packages/click/core.py", line 1435, in main
+Traceback (most recent call last):
+             ^^^^^^
+  File "/app/.venv/lib/python3.11/site-packages/click/core.py", line 1514, in __call__
+  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+         ^^^^^^^^^^^^^^^^
+  File "/app/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 65, in run
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mise/installs/python/3.11.15/lib/python3.11/asyncio/runners.py", line 118, in run
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 69, in serve
+    config.load()
+  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1126, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+  File "/app/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+    return _bootstrap._gcd_import(name[level:], package, level)
+Traceback (most recent call last):
+  File "/app/.venv/bin/uvicorn", line 8, in <module>
+    sys.exit(main())
+  File "/app/.venv/lib/python3.11/site-packages/click/core.py", line 1514, in __call__
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    rv = self.invoke(ctx)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/.venv/lib/python3.11/site-packages/click/core.py", line 853, in invoke
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mise/installs/python/3.11.15/lib/python3.11/asyncio/runners.py", line 190, in run
+  File "/mise/installs/python/3.11.15/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+  File "/app/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 69, in serve
+    await self._serve(sockets)
+    config.load()
+  File "/app/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 22, in import_from_string
+    raise exc from None
+    module = importlib.import_module(module_str)
+  File "/mise/installs/python/3.11.15/lib/python3.11/importlib/__init__.py", line 126, in import_module
+  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+Traceback (most recent call last):
+    sys.exit(main())
+             ^^^^^^
+  File "/app/.venv/lib/python3.11/site-packages/click/core.py", line 1435, in main
+    rv = self.invoke(ctx)
+  File "/app/.venv/lib/python3.11/site-packages/click/core.py", line 1298, in invoke
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/.venv/lib/python3.11/site-packages/uvicorn/main.py", line 412, in main
+  File "/app/.venv/lib/python3.11/site-packages/uvicorn/main.py", line 579, in run
+    server.run()
+  File "/app/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 65, in run
+    return asyncio.run(self.serve(sockets=sockets))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mise/installs/python/3.11.15/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+    await self._serve(sockets)
+    config.load()
+  File "/app/.venv/lib/python3.11/site-packages/uvicorn/config.py", line 434, in load
+  File "/app/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 22, in import_from_string
+  File "/app/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mise/installs/python/3.11.15/lib/python3.11/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1126, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+  File "/app/.venv/lib/python3.11/site-packages/click/core.py", line 1435, in main
+         ^^^^^^^^^^^^^^^^
+  File "/app/.venv/lib/python3.11/site-packages/click/core.py", line 1298, in invoke
+  File "/app/.venv/lib/python3.11/site-packages/click/core.py", line 853, in invoke
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    return callback(*args, **kwargs)
+    run(
+  File "/app/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 65, in run
+    return asyncio.run(self.serve(sockets=sockets))
+  File "/mise/installs/python/3.11.15/lib/python3.11/asyncio/runners.py", line 190, in run
+  File "/mise/installs/python/3.11.15/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    self.loaded_app = import_from_string(self.app)
+    raise exc from None
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "/app/.venv/lib/python3.11/site-packages/click/core.py", line 1298, in invoke
+  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+  File "/app/.venv/bin/uvicorn", line 8, in <module>
+             ^^^^^^
+    return self.main(*args, **kwargs)
+    rv = self.invoke(ctx)
+    return ctx.invoke(self.callback, **ctx.params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    server.run()
+  File "/mise/installs/python/3.11.15/lib/python3.11/asyncio/runners.py", line 190, in run
+    return runner.run(main)
+  File "/app/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 76, in _serve
+           ^^^^^^^^^^^^^^^^
+  File "/app/.venv/lib/python3.11/site-packages/uvicorn/config.py", line 434, in load
+    self.loaded_app = import_from_string(self.app)
+  File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
